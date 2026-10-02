@@ -1,38 +1,33 @@
 package core.basesyntax;
 
-import java.util.Arrays;
 import java.util.NoSuchElementException;
 
 public class ArrayList<T> implements List<T> {
     private static final int DEFAULT_CAPACITY = 10;
-    private Object[] myData;
+    private static final double GROW_FACTOR = 1.5;
+    private Object[] elementData;
     private int size;
 
     public ArrayList() {
-        myData = new Object[DEFAULT_CAPACITY];
+        elementData = new Object[DEFAULT_CAPACITY];
     }
 
     @Override
     public void add(T value) {
-        if (size == myData.length) {
-            myData = Arrays.copyOf(myData, myData.length + myData.length / 2);
-        }
-        myData[size] = value;
+        resizeIfFull();
+        elementData[size] = value;
         size++;
     }
 
     @Override
     public void add(T value, int index) {
         if (index < 0 || index > size) {
-            throw new ArrayListIndexOutOfBoundsException("...");
+            throw new ArrayListIndexOutOfBoundsException("Index " + index
+                    + " is out of bounds for size " + size);
         }
-        if (size == myData.length) {
-            myData = Arrays.copyOf(myData, myData.length + myData.length / 2);
-        }
-        for (int i = size - 1; i >= index; i--) {
-            myData[i + 1] = myData[i];
-        }
-        myData[index] = value;
+        resizeIfFull();
+        System.arraycopy(elementData, index, elementData, index + 1, size - index);
+        elementData[index] = value;
         size++;
     }
 
@@ -45,48 +40,37 @@ public class ArrayList<T> implements List<T> {
 
     @Override
     public T get(int index) {
-        if (index < 0 || index >= size) {
-            throw new ArrayListIndexOutOfBoundsException("...");
-        }
-        return (T) myData[index];
+        checkIndex(index);
+        return (T) elementData[index];
     }
 
     @Override
     public void set(T value, int index) {
-        if (index < 0 || index >= size) {
-            throw new ArrayListIndexOutOfBoundsException("...");
-        }
-        myData[index] = value;
+        checkIndex(index);
+        elementData[index] = value;
     }
 
     @Override
     public T remove(int index) {
-        if (index < 0 || index >= size) {
-            throw new ArrayListIndexOutOfBoundsException("...");
+        checkIndex(index);
+        final T removed = (T) elementData[index];
+        int numMoved = size - index - 1;
+        if (numMoved > 0) {
+            System.arraycopy(elementData, index + 1, elementData, index, numMoved);
         }
-        final T removed = (T) myData[index];
-        for (int i = index + 1; i < size; i++) {
-            myData[i - 1] = myData[i];
-        }
-        myData[size - 1] = null;
-        size--;
+        elementData[--size] = null;
         return removed;
     }
 
     @Override
     public T remove(T element) {
-        int index = -1;
         for (int i = 0; i < size; i++) {
-            if (myData[i] == null && element == null
-                    || myData[i] != null && myData[i].equals(element)) {
-                index = i;
-                break;
+            if (elementData[i] == element
+                    || (elementData[i] != null && elementData[i].equals(element))) {
+                return remove(i);
             }
         }
-        if (index == -1) {
-            throw new NoSuchElementException("...");
-        }
-        return remove(index);
+        throw new NoSuchElementException("Element " + element + " not found in the list");
     }
 
     @Override
@@ -96,7 +80,22 @@ public class ArrayList<T> implements List<T> {
 
     @Override
     public boolean isEmpty() {
-
         return size == 0;
+    }
+
+    private void checkIndex(int index) {
+        if (index < 0 || index >= size) {
+            throw new ArrayListIndexOutOfBoundsException("Index " + index
+                    + " is out of bounds for size " + size);
+        }
+    }
+
+    private void resizeIfFull() {
+        if (size == elementData.length) {
+            int newCapacity = (int) (elementData.length * GROW_FACTOR);
+            Object[] newArray = new Object[newCapacity];
+            System.arraycopy(elementData, 0, newArray, 0, size);
+            elementData = newArray;
+        }
     }
 }
